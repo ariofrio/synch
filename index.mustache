@@ -1,0 +1,73 @@
+<style type="text/css">
+audio, video {
+  position: absolute;
+  display: block;
+
+  left: 0;
+  width: 100%;
+}
+
+video {
+  top: 0;
+  height: 100%;
+}
+
+audio {
+  top: 50%;
+  height: 2em;
+  margin-top: -1em;
+}
+</style>
+<script src="node_modules/socket.io/node_modules/socket.io-client/dist/socket.io.min.js"></script>
+<script>
+var controller = null;
+window.onload = function() {
+  var socket = io.connect(window.location.host);
+
+  var video = $_('video');
+  
+  video.addEventListener('seeked', function() {
+    socket.emit('seeked', {
+      'video current time': video.currentTime,
+      'utc clock time': new Date().getUTCMilliseconds(),
+    });
+  }, true);
+
+  video.addEventListener('timeupdate', function() {
+    socket.emit('timeupdate', {
+      'video current time': video.currentTime,
+      'utc clock time': new Date().getUTCMilliseconds(),
+    });
+  }, true);
+
+  video.addEventListener('pause', function() {
+    socket.emit('pause');
+  }, true);
+
+  video.addEventListener('play', function() {
+    socket.emit('play');
+  }, true);
+
+  socket.on('status', function(data) {
+    document.getElementById('userCount').innerHTML = data['user count'];
+
+    if(data.paused) {
+      video.pause();
+    } else {
+      video.play();
+    }
+    
+    if (Math.abs(data['video current time'] - video.currentTime) > 5) {
+      video.currentTime = data['video current time'];
+    }
+  });
+};
+
+function $_(sel) {
+  return document.querySelector(sel);
+}
+</script>
+<div>
+  <p>Users: <span id="userCount"></span></p>
+  <p><video src="{{ url }}" controls></video></p>
+</div>

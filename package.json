@@ -2,6 +2,8 @@
   "name": "synch",
   "version": "0.0.1",
   "dependencies": {
-    "express": "2.5.2"
+    "express": "2.5.2",
+    "socket.io": "0.8.7",
+    "mustache": "0.3"
   }
 }

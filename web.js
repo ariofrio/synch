@@ -1,3 +1,5 @@
+var _ = require('underscore');
+
 var express = require('express');
 var app = express.createServer(express.logger());
 
@@ -22,11 +24,26 @@ app.get('/', function(req, res){
 var io = require('socket.io').listen(app);
 
 var userCount = 0;
-var currentTime = 0;
-var paused = true;
+var lastStatus = {
+  'paused': true,
+  'video current time': 0,
+  'server utc clock time': Date.now()
+};
 
 function reportStatus(socket) {
-  socket.emit('status', {'paused': paused, 'video current time': currentTime, 'user count': userCount});
+  updateVideoCurrentTime();
+  
+  var status = _.clone(lastStatus);
+  status['user count'] = userCount;
+  socket.emit('status', status);
+}
+
+function updateVideoCurrentTime() {
+  var newTime = Date.now();
+  if(!lastStatus.paused) {
+    lastStatus['video current time'] += (newTime - lastStatus['server utc clock time']) / 1000;
+    lastStatus['server utc clock time'] = newTime;
+  }
 }
 
 io.sockets.on('connection', function(socket) {
@@ -34,22 +51,25 @@ io.sockets.on('connection', function(socket) {
   reportStatus(socket);
 
   socket.on('pause', function() {
-    paused = true;
-    reportStatus(socket.broadcast);
+    if(!lastStatus.paused) {
+      updateVideoCurrentTime();
+      lastStatus.paused = true;
+      reportStatus(socket.broadcast);
+    }
   });
   
   socket.on('play', function() {
-    paused = false;
-    reportStatus(socket.broadcast);
+    if(lastStatus.paused) {
+      lastStatus['server utc clock time'] = Date.now();
+      lastStatus.paused = false;
+      reportStatus(socket.broadcast);
+    }
   });
 
   socket.on('seeked', function(data) {
-    currentTime = data['video current time'];
+    lastStatus['video current time'] = data['video current time'];
+    lastStatus['server utc clock time'] = Date.now();
     reportStatus(socket.broadcast);
-  });
-
-  socket.on('timeupdate', function(data) {
-    currentTime = data['video current time'];
   });
 
   socket.on('disconnect', function() {

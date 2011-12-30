@@ -4,6 +4,7 @@
   "dependencies": {
     "express": "2.5.2",
     "socket.io": "0.8.7",
-    "hogan.js": "1.0.2"
+    "hogan.js": "1.0.2",
+    "underscore": "1.2.3"
   }
 }

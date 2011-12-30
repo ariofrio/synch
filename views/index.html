@@ -40,15 +40,6 @@ window.onload = function() {
     });
   }, true);
 
-  // TODO: use seeked/seeking
-  video.addEventListener('timeupdate', function() {
-    //console.log("event timeupdate");
-    socket.emit('timeupdate', {
-      'video current time': video.currentTime,
-      'utc clock time': new Date().getUTCMilliseconds(),
-    });
-  }, true);
-
   var pauseIgnore = 0;
   video.addEventListener('pause', function() {
     if(pauseIgnore > 0) {

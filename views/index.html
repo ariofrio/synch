@@ -26,25 +26,48 @@ window.onload = function() {
 
   var video = $_('video');
   
+  var seekedIgnore = 0;
   video.addEventListener('seeked', function() {
+    if(seekedIgnore > 0) {
+      //console.log("event seeked (ignored)");
+      seekedIgnore--;
+      return;
+    }
+    console.log("event seeked");
     socket.emit('seeked', {
       'video current time': video.currentTime,
       'utc clock time': new Date().getUTCMilliseconds(),
     });
   }, true);
 
+  // TODO: use seeked/seeking
   video.addEventListener('timeupdate', function() {
+    //console.log("event timeupdate");
     socket.emit('timeupdate', {
       'video current time': video.currentTime,
       'utc clock time': new Date().getUTCMilliseconds(),
     });
   }, true);
 
+  var pauseIgnore = 0;
   video.addEventListener('pause', function() {
+    if(pauseIgnore > 0) {
+      //console.log("event pause (ignored)");
+      pauseIgnore--;
+      return;
+    }
+    console.log("event pause");
     socket.emit('pause');
   }, true);
 
+  var playIgnore = 0;
   video.addEventListener('play', function() {
+    if(playIgnore > 0) {
+      //console.log("event play (ignored)");
+      playIgnore--;
+      return;
+    }
+    console.log("event play");
     socket.emit('play');
   }, true);
 
@@ -52,12 +75,22 @@ window.onload = function() {
     document.getElementById('userCount').innerHTML = data['user count'];
 
     if(data.paused) {
-      video.pause();
+      if(!video.paused) {
+        console.log("status pause");
+        pauseIgnore++; // race condition (another pause happens between this and next line)
+        video.pause();
+      }
     } else {
-      video.play();
+      if(video.paused) {
+        console.log("status play");
+        playIgnore++; // race condition (another play happens between this and next line)
+        video.play();
+      }
     }
     
     if (Math.abs(data['video current time'] - video.currentTime) > 5) {
+      console.log("status seek");
+      seekedIgnore++;
       video.currentTime = data['video current time'];
     }
   });

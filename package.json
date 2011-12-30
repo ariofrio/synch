@@ -4,6 +4,6 @@
   "dependencies": {
     "express": "2.5.2",
     "socket.io": "0.8.7",
-    "mustache": "0.3"
+    "hogan.js": "1.0.2"
   }
 }

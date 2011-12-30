@@ -1,11 +1,25 @@
 var express = require('express');
 var app = express.createServer(express.logger());
 
-var io = require('socket.io').listen(app);
-
-app.get('/', function(req, res){
-  res.render('index.mustache', {'url': req.param('url')});
+// set up Hogan template engine
+var hogan = require('hogan.js');
+app.register('html', {
+  'compile': function(str, options) {
+    var template = hogan.compile(str, options);
+    return function(params) {
+      return template.render(params);
+    };
+  }
 });
+app.set('view engine', 'html');
+
+// routes
+app.get('/', function(req, res){
+  res.render('index', {'url': req.param('url'), 'layout': false});
+});
+
+// socket.io time synchronization
+var io = require('socket.io').listen(app);
 
 var userCount = 0;
 var currentTime = 0;
@@ -44,6 +58,7 @@ io.sockets.on('connection', function(socket) {
   });
 });
 
+// yay! let's listen
 var port = process.env.PORT || 3000;
 app.listen(port, function() {
   console.log("Listening on " + port);
